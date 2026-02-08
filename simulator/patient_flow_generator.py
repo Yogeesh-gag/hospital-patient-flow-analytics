@@ -94,3 +94,5 @@ while True:
         print(" Kafka send error:", e)
 
     time.sleep(2)
+
+# iam adding these line to what changes in the git hub to see
