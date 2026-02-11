@@ -1,0 +1,73 @@
+CREATE MASTER KEY ENCRYPTION by PASSWORD = 'Yogi@gag';
+
+--creating a scope
+CREATE DATABASE SCOPED CREDENTIAL storage_credential
+with IDENTITY='Managed Identity';
+
+--defining data source
+
+CREATE EXTERNAL DATA SOURCE gold_data_source
+with (
+    TYPE=HADOOP,
+    Location='<<Storage acoount path>>',
+    CREDENTIAL=storage_credential
+)
+
+--define format
+CREATE EXTERNAL FILE FORMAT ParquetFileFormat
+WITH(
+    FORMAT_TYPE=PARQUET
+);
+
+---create tables
+---first one patient dimension table
+CREATE EXTERNAL TABLE dbo.dim_patient(
+    patient_id VARCHAR(50),
+    gender VARCHAR(10),
+    age INT,
+    effective_from DATETIME2,
+    surrogate_key BIGINT,
+    effctive_to DATETIME2,
+    is_current BIT
+) 
+with(
+    LOCATION ='dim_patient',
+    DATA_SOURCE = gold_data_source,
+    FILE_FORMAT = ParquetFileFormat
+);
+
+---department dimension table
+
+CREATE EXTERNAL TABLE dbo.dim_department(
+    department NVARCHAR(200),
+    hospital_id INT,
+    surrogate_key BIGINT
+) 
+with(
+    LOCATION ='dim_department/',
+    DATA_SOURCE = gold_data_source,
+    FILE_FORMAT = ParquetFileFormat
+);
+
+---fact table
+
+CREATE EXTERNAL TABLE dbo.dim_fact_patient_flow(
+    fact_id BIGINT,
+    patient_sk BIGINT,
+    departmemt_sk BIGINT,
+    admission_time DATETIME2,
+    discharge_time DATETIME2,
+    admission_date DATE,
+    length_of_stay_hours FLOAT,
+    is_currently_admitted  BIT,
+    bed_id INT,
+    event_ingestion_time DATETIME2
+) 
+with(
+    LOCATION ='fact_patient_flow/',
+    DATA_SOURCE = gold_data_source,
+    FILE_FORMAT = ParquetFileFormat
+);
+
+
+select * from dbo.dim_fact_patient_flow;
